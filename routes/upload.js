@@ -1,18 +1,25 @@
 const express = require("express");
 const multer = require("multer");
-const { storage } = require("../utils/cloudinary");
+const cloudinary = require("../utils/cloudinary");
+const fs = require("fs");
+const path = require("path");
 
 const router = express.Router();
-const upload = multer({ storage });
+const upload = multer({ dest: "temp/" }); // temp klasörü
 
-// ✅ Cloudinary'e yükleme
-router.post("/", upload.single("image"), (req, res) => {
-  if (!req.file || !req.file.path) {
-    return res.status(400).json({ error: "Görsel yüklenemedi" });
+router.post("/", upload.single("image"), async (req, res) => {
+  try {
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "materialblog",
+    });
+
+    fs.unlinkSync(req.file.path); // geçici dosyayı sil
+
+    res.json({ url: result.secure_url }); // frontend'e sadece url döner
+  } catch (err) {
+    console.error("Cloudinary yükleme hatası:", err);
+    res.status(500).json({ error: "Görsel yüklenemedi" });
   }
-
-  // Cloudinary'den dönen url
-  res.json({ url: req.file.path });
 });
 
 module.exports = router;
