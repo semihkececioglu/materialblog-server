@@ -1,28 +1,18 @@
 const express = require("express");
 const multer = require("multer");
-const path = require("path");
+const { storage } = require("../utils/cloudinary");
 
 const router = express.Router();
-
-// Yükleme klasörü ve dosya ismi ayarı
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    const uniqueName = Date.now() + "-" + file.originalname;
-    cb(null, uniqueName);
-  },
-});
-
 const upload = multer({ storage });
 
-// Yükleme işlemi
+// ✅ Cloudinary'e yükleme
 router.post("/", upload.single("image"), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "Dosya yüklenemedi" });
+  if (!req.file || !req.file.path) {
+    return res.status(400).json({ error: "Görsel yüklenemedi" });
+  }
 
-  const imageUrl = `https://materialblog-server-production.up.railway.app/uploads/${req.file.filename}`;
-  res.json({ url: imageUrl }); // ✅ Doğrudan tam URL döndür
+  // Cloudinary'den dönen url
+  res.json({ url: req.file.path });
 });
 
 module.exports = router;
