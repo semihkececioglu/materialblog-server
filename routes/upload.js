@@ -21,9 +21,8 @@ const upload = multer({ storage });
 router.post("/", upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Dosya yüklenemedi" });
 
-  const imageUrl = `${req.protocol}://${req.get("host")}/uploads/${
-    req.file.filename
-  }`;
+  const imageUrl = `https://materialblog-server-production.up.railway.app/uploads/${req.file.filename}`;
+
   res.json({ url: imageUrl });
 });
 
