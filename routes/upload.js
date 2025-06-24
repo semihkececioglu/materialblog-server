@@ -1,30 +1,37 @@
 const express = require("express");
 const multer = require("multer");
 const cloudinary = require("../utils/cloudinary");
-const { Readable } = require("stream");
-
 const router = express.Router();
+
+// multer memory storage (dosya diske yazılmaz)
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "Dosya bulunamadı" });
+    const file = req.file;
 
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: "materialblog",
-      },
+    if (!file) {
+      return res.status(400).json({ error: "Görsel bulunamadı" });
+    }
+
+    const result = await cloudinary.uploader.upload_stream(
+      { folder: "materialblog", resource_type: "image" },
       (error, result) => {
-        if (error) return res.status(500).json({ error: "Yükleme hatası" });
-        return res.json({ url: result.secure_url });
+        if (error) {
+          return res.status(500).json({ error: "Cloudinary yükleme hatası" });
+        }
+        return res.status(200).json({ url: result.secure_url });
       }
     );
 
-    Readable.from(req.file.buffer).pipe(stream);
+    // Pipe buffer to stream
+    const stream = require("stream");
+    const bufferStream = new stream.PassThrough();
+    bufferStream.end(file.buffer);
+    bufferStream.pipe(result);
   } catch (err) {
-    console.error("Yükleme hatası:", err);
-    res.status(500).json({ error: "Sunucu hatası" });
+    res.status(500).json({ error: "Yükleme başarısız" });
   }
 });
 
