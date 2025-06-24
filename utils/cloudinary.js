@@ -10,7 +10,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: "materialblog", // Cloudinary'de dosyalar bu klasörde saklanacak
+    folder: "materialblog",
     allowed_formats: ["jpg", "png", "jpeg", "webp"],
     transformation: [{ width: 1280, crop: "limit" }],
   },
