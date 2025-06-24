@@ -22,8 +22,7 @@ router.post("/", upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Dosya yüklenemedi" });
 
   const imageUrl = `https://materialblog-server-production.up.railway.app/uploads/${req.file.filename}`;
-
-  res.json({ url: imageUrl });
+  res.json({ url: imageUrl }); // ✅ Doğrudan tam URL döndür
 });
 
 module.exports = router;
