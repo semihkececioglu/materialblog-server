@@ -3,25 +3,45 @@ const router = express.Router();
 const Post = require("../models/Post");
 const User = require("../models/User");
 
-// Tüm postları veya kategoriye göre filtrelenmiş postları al
+// GET /api/posts?search=...&category=...&page=...&limit=...
 router.get("/", async (req, res) => {
   try {
-    const { category } = req.query;
+    const { search = "", category, page = 1, limit = 6 } = req.query;
 
-    let filter = {};
+    let filter = {
+      $or: [
+        { title: { $regex: search, $options: "i" } },
+        { content: { $regex: search, $options: "i" } },
+      ],
+    };
+
     if (category) {
       filter.categorySlug = category;
     }
 
-    const posts = await Post.find(filter).sort({ date: -1 });
-    res.json(posts);
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+
+    const totalPosts = await Post.countDocuments(filter);
+    const totalPages = Math.ceil(totalPosts / pageSize);
+
+    const posts = await Post.find(filter)
+      .sort({ date: -1 })
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize);
+
+    res.json({
+      posts,
+      totalPages,
+      currentPage: pageNumber,
+    });
   } catch (err) {
     console.error("Postları alırken hata:", err);
     res.status(500).json({ error: "Sunucu hatası" });
   }
 });
 
-// Tekil postu ID ile getir
+// GET /api/posts/:id – Tekil postu ID ile getir
 router.get("/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -34,7 +54,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Yeni post oluştur
+// POST /api/posts – Yeni post oluştur
 router.post("/", async (req, res) => {
   try {
     const newPost = new Post(req.body);
@@ -45,7 +65,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// Post güncelle
+// PUT /api/posts/:id – Post güncelle
 router.put("/:id", async (req, res) => {
   try {
     const updatedPost = await Post.findByIdAndUpdate(req.params.id, req.body, {
@@ -60,7 +80,7 @@ router.put("/:id", async (req, res) => {
   }
 });
 
-// Post sil
+// DELETE /api/posts/:id – Post sil
 router.delete("/:id", async (req, res) => {
   try {
     const deletedPost = await Post.findByIdAndDelete(req.params.id);
@@ -73,7 +93,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// Like/Unlike
+// POST /api/posts/slug/:slug/like – Beğen / Beğenmekten vazgeç
 router.post("/slug/:slug/like", async (req, res) => {
   const { slug } = req.params;
   const { userId } = req.body;
@@ -107,7 +127,7 @@ router.post("/slug/:slug/like", async (req, res) => {
   }
 });
 
-// Save/unsave
+// POST /api/posts/slug/:slug/save – Kaydet / Kaldır
 router.post("/slug/:slug/save", async (req, res) => {
   const { slug } = req.params;
   const { userId } = req.body;
@@ -138,6 +158,7 @@ router.post("/slug/:slug/save", async (req, res) => {
   }
 });
 
+// GET /api/posts/slug/:slug/like-status?userId=... – Beğeni durumu kontrolü
 router.get("/slug/:slug/like-status", async (req, res) => {
   const { slug } = req.params;
   const { userId } = req.query;
