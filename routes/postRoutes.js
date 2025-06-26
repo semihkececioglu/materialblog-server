@@ -3,10 +3,10 @@ const router = express.Router();
 const Post = require("../models/Post");
 const User = require("../models/User");
 
-// GET /api/posts?search=...&category=...&page=...&limit=...
+// GET /api/posts?search=...&category=...&tag=...&page=...&limit=...
 router.get("/", async (req, res) => {
   try {
-    const { search = "", category, page = 1, limit = 6 } = req.query;
+    const { search = "", category, tag, page = 1, limit = 6 } = req.query;
 
     let filter = {
       $or: [
@@ -17,6 +17,10 @@ router.get("/", async (req, res) => {
 
     if (category) {
       filter.categorySlug = category;
+    }
+
+    if (tag) {
+      filter.tags = tag;
     }
 
     const pageNumber = parseInt(page);
