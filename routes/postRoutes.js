@@ -178,4 +178,21 @@ router.get("/slug/:slug/like-status", async (req, res) => {
   }
 });
 
+// GET /api/posts/slug/:slug – Slug'a göre tekil yazı getir
+router.get("/slug/:slug", async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const post = await Post.findOne({ slug });
+
+    if (!post) {
+      return res.status(404).json({ message: "Yazı bulunamadı" });
+    }
+
+    res.json(post);
+  } catch (err) {
+    console.error("Slug ile yazı alma hatası:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
 module.exports = router;
