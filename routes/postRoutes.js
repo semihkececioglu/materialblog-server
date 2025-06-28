@@ -3,13 +3,23 @@ const router = express.Router();
 const Post = require("../models/Post");
 const User = require("../models/User");
 
-// ✅ SLUG TABANLI ENDPOINTLER ÖNCE
-router.get("/slug/:slug/like-status", async (req, res) => {
-  const { slug } = req.params;
+router.get("/slug/:slug", async (req, res) => {
+  try {
+    const post = await Post.findOne({ slug: req.params.slug });
+    if (!post) return res.status(404).json({ message: "Yazı bulunamadı" });
+    res.json(post);
+  } catch (err) {
+    console.error("Slug ile yazı alma hatası:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+router.get("/:postId/like-status", async (req, res) => {
+  const { postId } = req.params;
   const { userId } = req.query;
 
   try {
-    const post = await Post.findOne({ slug });
+    const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ message: "Post not found" });
 
     const liked = post.likes.includes(userId);
@@ -22,12 +32,12 @@ router.get("/slug/:slug/like-status", async (req, res) => {
   }
 });
 
-router.post("/slug/:slug/like", async (req, res) => {
-  const { slug } = req.params;
+router.post("/:postId/like", async (req, res) => {
+  const { postId } = req.params;
   const { userId } = req.body;
 
   try {
-    const post = await Post.findOne({ slug });
+    const post = await Post.findById(postId);
     const user = await User.findById(userId);
 
     if (!post || !user) return res.status(404).json({ message: "Bulunamadı" });
@@ -54,12 +64,12 @@ router.post("/slug/:slug/like", async (req, res) => {
   }
 });
 
-router.post("/slug/:slug/save", async (req, res) => {
-  const { slug } = req.params;
+router.post("/:postId/save", async (req, res) => {
+  const { postId } = req.params;
   const { userId } = req.body;
 
   try {
-    const post = await Post.findOne({ slug });
+    const post = await Post.findById(postId);
     const user = await User.findById(userId);
 
     if (!post || !user) return res.status(404).json({ message: "Bulunamadı" });
@@ -79,17 +89,6 @@ router.post("/slug/:slug/save", async (req, res) => {
   } catch (error) {
     console.error("Save işlem hatası:", error);
     res.status(500).json({ message: "Sunucu hatası" });
-  }
-});
-
-router.get("/slug/:slug", async (req, res) => {
-  try {
-    const post = await Post.findOne({ slug: req.params.slug });
-    if (!post) return res.status(404).json({ message: "Yazı bulunamadı" });
-    res.json(post);
-  } catch (err) {
-    console.error("Slug ile yazı alma hatası:", err);
-    res.status(500).json({ error: "Sunucu hatası" });
   }
 });
 
