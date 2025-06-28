@@ -3,6 +3,7 @@ const router = express.Router();
 const Post = require("../models/Post");
 const User = require("../models/User");
 
+// ✅ GET: Slug ile post verisi al
 router.get("/slug/:slug", async (req, res) => {
   try {
     const post = await Post.findOne({ slug: req.params.slug });
@@ -14,24 +15,27 @@ router.get("/slug/:slug", async (req, res) => {
   }
 });
 
+// ✅ GET: Beğeni durumu (postId + userId)
 router.get("/:postId/like-status", async (req, res) => {
   const { postId } = req.params;
   const { userId } = req.query;
 
   try {
     const post = await Post.findById(postId);
-    if (!post) return res.status(404).json({ message: "Post not found" });
+    if (!post) return res.status(404).json({ message: "Yazı bulunamadı" });
 
     const liked = post.likes.includes(userId);
     res.status(200).json({
       liked,
       likeCount: post.likes.length,
     });
-  } catch (error) {
+  } catch (err) {
+    console.error("Beğeni durumu hatası:", err);
     res.status(500).json({ message: "Sunucu hatası" });
   }
 });
 
+// ✅ POST: Beğeni işlemi (toggle)
 router.post("/:postId/like", async (req, res) => {
   const { postId } = req.params;
   const { userId } = req.body;
@@ -39,7 +43,6 @@ router.post("/:postId/like", async (req, res) => {
   try {
     const post = await Post.findById(postId);
     const user = await User.findById(userId);
-
     if (!post || !user) return res.status(404).json({ message: "Bulunamadı" });
 
     const alreadyLiked = post.likes.includes(userId);
@@ -58,12 +61,13 @@ router.post("/:postId/like", async (req, res) => {
       liked: !alreadyLiked,
       likeCount: post.likes.length,
     });
-  } catch (error) {
-    console.error("Like işlem hatası:", error);
+  } catch (err) {
+    console.error("Beğeni işlem hatası:", err);
     res.status(500).json({ message: "Sunucu hatası" });
   }
 });
 
+// ✅ POST: Kaydetme işlemi (toggle)
 router.post("/:postId/save", async (req, res) => {
   const { postId } = req.params;
   const { userId } = req.body;
@@ -71,7 +75,6 @@ router.post("/:postId/save", async (req, res) => {
   try {
     const post = await Post.findById(postId);
     const user = await User.findById(userId);
-
     if (!post || !user) return res.status(404).json({ message: "Bulunamadı" });
 
     const alreadySaved = user.savedPosts.includes(post._id);
@@ -86,18 +89,18 @@ router.post("/:postId/save", async (req, res) => {
     res.status(200).json({
       saved: !alreadySaved,
     });
-  } catch (error) {
-    console.error("Save işlem hatası:", error);
+  } catch (err) {
+    console.error("Kaydetme işlem hatası:", err);
     res.status(500).json({ message: "Sunucu hatası" });
   }
 });
 
-// ✅ NORMAL ROUTELAR SONRA
+// ✅ GET: Arama, filtreleme ve pagination
 router.get("/", async (req, res) => {
   try {
     const { search = "", category, tag, page = 1, limit = 6 } = req.query;
 
-    let filter = {
+    const filter = {
       $or: [
         { title: { $regex: search, $options: "i" } },
         { content: { $regex: search, $options: "i" } },
@@ -124,31 +127,36 @@ router.get("/", async (req, res) => {
       currentPage: pageNumber,
     });
   } catch (err) {
-    console.error("Postları alırken hata:", err);
+    console.error("Post listeleme hatası:", err);
     res.status(500).json({ error: "Sunucu hatası" });
   }
 });
 
+// ✅ GET: ID ile tek post getir
 router.get("/:id", async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ error: "Yazı bulunamadı" });
     res.json(post);
   } catch (err) {
+    console.error("ID ile yazı alma hatası:", err);
     res.status(500).json({ error: "Sunucu hatası" });
   }
 });
 
+// ✅ POST: Yeni yazı oluştur
 router.post("/", async (req, res) => {
   try {
     const newPost = new Post(req.body);
     const savedPost = await newPost.save();
     res.status(201).json(savedPost);
   } catch (err) {
+    console.error("Yeni yazı ekleme hatası:", err);
     res.status(400).json({ error: "Geçersiz veri!" });
   }
 });
 
+// ✅ PUT: Yazı güncelle
 router.put("/:id", async (req, res) => {
   try {
     const updatedPost = await Post.findByIdAndUpdate(req.params.id, req.body, {
@@ -157,16 +165,19 @@ router.put("/:id", async (req, res) => {
     if (!updatedPost) return res.status(404).json({ error: "Yazı bulunamadı" });
     res.json(updatedPost);
   } catch (err) {
+    console.error("Yazı güncelleme hatası:", err);
     res.status(500).json({ error: "Sunucu hatası" });
   }
 });
 
+// ✅ DELETE: Yazı sil
 router.delete("/:id", async (req, res) => {
   try {
     const deletedPost = await Post.findByIdAndDelete(req.params.id);
     if (!deletedPost) return res.status(404).json({ error: "Yazı bulunamadı" });
     res.json({ message: "Yazı silindi" });
   } catch (err) {
+    console.error("Yazı silme hatası:", err);
     res.status(500).json({ error: "Sunucu hatası" });
   }
 });
