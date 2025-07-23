@@ -200,4 +200,19 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+//Son 5 yazıyı getir
+router.get("/latest", async (req, res) => {
+  try {
+    const latestPosts = await Post.find()
+      .sort({ date: -1 })
+      .limit(5)
+      .select("title slug date image");
+
+    res.status(200).json(latestPosts);
+  } catch (err) {
+    console.error("Son yazılar alınamadı:", err.message);
+    res.status(500).json({ message: "Yazılar alınamadı." });
+  }
+});
+
 module.exports = router;
