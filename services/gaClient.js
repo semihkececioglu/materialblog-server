@@ -1,5 +1,5 @@
 const { BetaAnalyticsDataClient } = require("@google-analytics/data");
-const Setting = require("../models/Setting");
+const Setting = require("../models/Settings");
 
 const analytics = new BetaAnalyticsDataClient({
   credentials: {
@@ -10,7 +10,7 @@ const analytics = new BetaAnalyticsDataClient({
 
 async function getPropertyId() {
   const settings = await Setting.getSingleton();
-  return settings.gaPropertyId; // kullanıcı admin panelden kaydedecek
+  return settings.gaPropertyId;
 }
 
 module.exports = { analytics, getPropertyId };

@@ -2,93 +2,72 @@ const express = require("express");
 const router = express.Router();
 const { analytics, getPropertyId } = require("../services/gaClient");
 
-// ── Özet
+// Overview
 router.get("/overview", async (req, res) => {
   try {
     const propertyId = await getPropertyId();
-    if (!propertyId) {
-      return res.status(400).json({ message: "GA Property ID tanımlı değil" });
-    }
+    const { startDate, endDate } = req.query;
 
     const [response] = await analytics.runReport({
       property: `properties/${propertyId}`,
-      dateRanges: [
-        { startDate: req.query.startDate, endDate: req.query.endDate },
-      ],
+      dateRanges: [{ startDate, endDate }],
       metrics: [{ name: "activeUsers" }, { name: "screenPageViews" }],
     });
 
-    res.json(response.rows || []);
+    res.json(response);
   } catch (err) {
-    console.error("GA /overview error:", err);
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    res.status(500).json({ message: "GA overview alınamadı" });
   }
 });
 
-// ── Ziyaretçi trendleri (time series)
+// Timeseries
 router.get("/timeseries", async (req, res) => {
   try {
     const propertyId = await getPropertyId();
-    if (!propertyId) {
-      return res.status(400).json({ message: "GA Property ID tanımlı değil" });
-    }
-
-    const metricName = req.query.metric || "activeUsers";
+    const { startDate, endDate, metric = "activeUsers" } = req.query;
 
     const [response] = await analytics.runReport({
       property: `properties/${propertyId}`,
-      dateRanges: [
-        { startDate: req.query.startDate, endDate: req.query.endDate },
-      ],
+      dateRanges: [{ startDate, endDate }],
+      metrics: [{ name: metric }],
       dimensions: [{ name: "date" }],
-      metrics: [{ name: metricName }],
     });
 
-    const data =
-      response.rows?.map((r) => ({
-        date: r.dimensionValues[0].value,
-        value: parseInt(r.metricValues[0].value, 10),
-      })) || [];
+    const rows = response.rows?.map((r) => ({
+      date: r.dimensionValues?.[0]?.value,
+      value: Number(r.metricValues?.[0]?.value || 0),
+    }));
 
-    res.json(data);
+    res.json(rows);
   } catch (err) {
-    console.error("GA /timeseries error:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "GA timeseries alınamadı" });
   }
 });
 
-// ── En çok görüntülenen sayfalar
+// Top Pages
 router.get("/top-pages", async (req, res) => {
   try {
     const propertyId = await getPropertyId();
-    if (!propertyId) {
-      return res.status(400).json({ message: "GA Property ID tanımlı değil" });
-    }
-
-    const limit = parseInt(req.query.limit, 10) || 10;
+    const { startDate, endDate, limit = 10 } = req.query;
 
     const [response] = await analytics.runReport({
       property: `properties/${propertyId}`,
-      dateRanges: [
-        { startDate: req.query.startDate, endDate: req.query.endDate },
-      ],
-      dimensions: [{ name: "pagePath" }, { name: "pageTitle" }],
+      dateRanges: [{ startDate, endDate }],
       metrics: [{ name: "screenPageViews" }],
-      limit,
-      orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+      dimensions: [{ name: "pagePath" }, { name: "pageTitle" }],
+      limit: Number(limit),
     });
 
-    const data =
-      response.rows?.map((r) => ({
-        path: r.dimensionValues[0].value,
-        title: r.dimensionValues[1].value,
-        views: parseInt(r.metricValues[0].value, 10),
-      })) || [];
+    const rows = response.rows?.map((r) => ({
+      path: r.dimensionValues?.[0]?.value,
+      title: r.dimensionValues?.[1]?.value,
+      views: Number(r.metricValues?.[0]?.value || 0),
+    }));
 
-    res.json(data);
+    res.json(rows);
   } catch (err) {
-    console.error("GA /top-pages error:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "GA top pages alınamadı" });
   }
 });
 
