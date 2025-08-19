@@ -17,6 +17,7 @@ router.get("/public", async (_req, res) => {
     res.json({
       gaEnabled: !!s.gaEnabled,
       gaMeasurementId: s.gaMeasurementId || "",
+      // ⚠️ Burada propertyId dönmüyoruz, güvenlik için yalnızca Measurement ID
     });
   } catch (err) {
     res.status(500).json({ message: "Public ayarlar alınamadı" });
@@ -33,8 +34,16 @@ router.get("/", async (_req, res) => {
   }
 });
 
+// ── ADMIN: Ayarları güncelle
 router.put("/", async (req, res) => {
-  const { siteTitle, siteDescription, gaEnabled, gaMeasurementId } = req.body;
+  const {
+    siteTitle,
+    siteDescription,
+    gaEnabled,
+    gaMeasurementId,
+    gaPropertyId, // yeni alan
+  } = req.body;
+
   try {
     const s = await getSingleton();
 
@@ -42,14 +51,16 @@ router.put("/", async (req, res) => {
     if (typeof siteDescription === "string")
       s.siteDescription = siteDescription;
 
-    // GA alanları (Faz 1)
+    // GA alanları
     if (typeof gaEnabled === "boolean") s.gaEnabled = gaEnabled;
     if (typeof gaMeasurementId === "string")
       s.gaMeasurementId = gaMeasurementId.trim();
+    if (typeof gaPropertyId === "string") s.gaPropertyId = gaPropertyId.trim();
 
     await s.save();
     res.json(s);
   } catch (err) {
+    console.error("Settings update error:", err);
     res.status(500).json({ message: "Ayarlar güncellenemedi" });
   }
 });

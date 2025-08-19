@@ -6,6 +6,7 @@ const settingsSchema = new mongoose.Schema(
     siteDescription: { type: String, default: "" },
     gaEnabled: { type: Boolean, default: false },
     gaMeasurementId: { type: String, default: "" }, // Örn: G-ABCD1234
+    gaPropertyId: { type: String, default: "" }, // 123456789 (rapor için)
   },
   { timestamps: true }
 );
