@@ -1,3 +1,4 @@
+// routes/analytics.js
 const express = require("express");
 const { BetaAnalyticsDataClient } = require("@google-analytics/data");
 const router = express.Router();
@@ -8,7 +9,7 @@ const analyticsDataClient = new BetaAnalyticsDataClient({
 const propertyId = process.env.GA4_PROPERTY_ID;
 
 /* ===========================
-   GA Overview (aktif kullanıcı + pageviews)
+   GA Overview (aktif kullanıcı + event count)
    =========================== */
 router.get("/overview", async (req, res) => {
   try {
@@ -19,7 +20,7 @@ router.get("/overview", async (req, res) => {
       dateRanges: [{ startDate, endDate }],
       metrics: [
         { name: "activeUsers" },
-        { name: "screenPageViews" }, // gerekirse test için bunu çıkar
+        { name: "eventCount" }, // screenPageViews yerine
       ],
     });
 
@@ -34,7 +35,7 @@ router.get("/overview", async (req, res) => {
 });
 
 /* ===========================
-   GA Timeseries (günlük aktif kullanıcı / pageviews)
+   GA Timeseries (günlük aktif kullanıcı + event count)
    =========================== */
 router.get("/timeseries", async (req, res) => {
   try {
@@ -44,10 +45,7 @@ router.get("/timeseries", async (req, res) => {
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: "date" }],
-      metrics: [
-        { name: "activeUsers" },
-        { name: "screenPageViews" }, // gerekirse test için bunu çıkar
-      ],
+      metrics: [{ name: "activeUsers" }, { name: "eventCount" }],
     });
 
     res.json(response);
@@ -75,8 +73,8 @@ router.get("/top-pages", async (req, res) => {
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: "pagePath" }],
-      metrics: [{ name: "screenPageViews" }], // gerekirse test için bunu çıkar
-      orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+      metrics: [{ name: "eventCount" }], // screenPageViews yerine eventCount
+      orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
       limit: Number(limit),
     });
 
