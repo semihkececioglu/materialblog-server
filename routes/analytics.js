@@ -1,4 +1,3 @@
-// routes/analytics.js
 const express = require("express");
 const { BetaAnalyticsDataClient } = require("@google-analytics/data");
 const router = express.Router();
@@ -9,7 +8,7 @@ const analyticsDataClient = new BetaAnalyticsDataClient({
 const propertyId = process.env.GA4_PROPERTY_ID;
 
 /* ===========================
-   GA Overview (aktif kullanıcı + event count)
+   GA Overview (aktif kullanıcı + page views)
    =========================== */
 router.get("/overview", async (req, res) => {
   try {
@@ -18,10 +17,13 @@ router.get("/overview", async (req, res) => {
     const [response] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate, endDate }],
-      metrics: [
-        { name: "activeUsers" },
-        { name: "eventCount" }, // screenPageViews yerine
-      ],
+      metrics: [{ name: "activeUsers" }, { name: "eventCount" }],
+      dimensionFilter: {
+        filter: {
+          fieldName: "eventName",
+          stringFilter: { value: "page_view" }, // ✅ sadece page_view
+        },
+      },
     });
 
     res.json(response);
@@ -35,7 +37,7 @@ router.get("/overview", async (req, res) => {
 });
 
 /* ===========================
-   GA Timeseries (günlük aktif kullanıcı + event count)
+   GA Timeseries (günlük aktif kullanıcı + page views)
    =========================== */
 router.get("/timeseries", async (req, res) => {
   try {
@@ -46,6 +48,12 @@ router.get("/timeseries", async (req, res) => {
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: "date" }],
       metrics: [{ name: "activeUsers" }, { name: "eventCount" }],
+      dimensionFilter: {
+        filter: {
+          fieldName: "eventName",
+          stringFilter: { value: "page_view" },
+        },
+      },
     });
 
     res.json(response);
@@ -73,9 +81,15 @@ router.get("/top-pages", async (req, res) => {
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: "pagePath" }],
-      metrics: [{ name: "eventCount" }], // screenPageViews yerine eventCount
+      metrics: [{ name: "eventCount" }],
       orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
       limit: Number(limit),
+      dimensionFilter: {
+        filter: {
+          fieldName: "eventName",
+          stringFilter: { value: "page_view" }, // ✅ sadece page_view
+        },
+      },
     });
 
     res.json(response);
