@@ -11,56 +11,50 @@ const propertyId = process.env.GA4_PROPERTY_ID;
 /* ===========================
    GA Overview (aktif kullanıcı + event count)
    =========================== */
+// Overview
 router.get("/overview", async (req, res) => {
   try {
     const { startDate = "7daysAgo", endDate = "today" } = req.query;
-
     const [response] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate, endDate }],
       metrics: [
         { name: "activeUsers" },
-        { name: "eventCount" }, // screenPageViews yerine
+        { name: "views" }, // ✅ gerçek sayfa görüntülenme
       ],
     });
-
     res.json(response);
   } catch (err) {
     console.error("GA overview error:", JSON.stringify(err, null, 2));
-    res.status(500).json({
-      message: "GA overview alınamadı",
-      error: err.message,
-    });
+    res
+      .status(500)
+      .json({ message: "GA overview alınamadı", error: err.message });
   }
 });
 
-/* ===========================
-   GA Timeseries (günlük aktif kullanıcı + event count)
-   =========================== */
+// Timeseries
 router.get("/timeseries", async (req, res) => {
   try {
     const { startDate = "7daysAgo", endDate = "today" } = req.query;
-
     const [response] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: "date" }],
-      metrics: [{ name: "activeUsers" }, { name: "eventCount" }],
+      metrics: [
+        { name: "activeUsers" },
+        { name: "views" }, // ✅ sayfa görüntülenme
+      ],
     });
-
     res.json(response);
   } catch (err) {
     console.error("GA timeseries error:", JSON.stringify(err, null, 2));
-    res.status(500).json({
-      message: "GA timeseries alınamadı",
-      error: err.message,
-    });
+    res
+      .status(500)
+      .json({ message: "GA timeseries alınamadı", error: err.message });
   }
 });
 
-/* ===========================
-   GA Top Pages (en çok görüntülenen sayfalar)
-   =========================== */
+// Top Pages
 router.get("/top-pages", async (req, res) => {
   try {
     const {
@@ -68,23 +62,20 @@ router.get("/top-pages", async (req, res) => {
       endDate = "today",
       limit = 10,
     } = req.query;
-
     const [response] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate, endDate }],
       dimensions: [{ name: "pagePath" }],
-      metrics: [{ name: "eventCount" }], // screenPageViews yerine eventCount
-      orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
+      metrics: [{ name: "views" }], // ✅ sayfa görüntülenme
+      orderBys: [{ metric: { metricName: "views" }, desc: true }],
       limit: Number(limit),
     });
-
     res.json(response);
   } catch (err) {
     console.error("GA top-pages error:", JSON.stringify(err, null, 2));
-    res.status(500).json({
-      message: "GA top pages alınamadı",
-      error: err.message,
-    });
+    res
+      .status(500)
+      .json({ message: "GA top pages alınamadı", error: err.message });
   }
 });
 
