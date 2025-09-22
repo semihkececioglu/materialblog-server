@@ -48,7 +48,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// ✅ Popüler etiketler (en çok kullanılan ilk 6)
+// Popüler etiketler (en çok kullanılan ilk 6)
 router.get("/popular", async (req, res) => {
   try {
     const tags = await Post.aggregate([
@@ -79,6 +79,34 @@ router.get("/popular", async (req, res) => {
     res.json(tags);
   } catch (err) {
     console.error("Popüler etiketler alınamadı:", err);
+    res.status(500).json({ error: "Sunucu hatası" });
+  }
+});
+
+// Tag bilgisi endpoint'i ekle
+router.get("/info/:tagName", async (req, res) => {
+  try {
+    const tagName = decodeURIComponent(req.params.tagName);
+
+    // Tag'i bul
+    const tag = await Tag.findOne({
+      name: { $regex: new RegExp(`^${tagName}$`, "i") },
+    });
+
+    if (!tag) {
+      return res.status(404).json({ error: "Etiket bulunamadı" });
+    }
+
+    // Bu tag'e ait yazı sayısını bul
+    const postCount = await Post.countDocuments({ tags: tag._id });
+
+    res.json({
+      name: tag.name,
+      count: postCount,
+      id: tag._id,
+    });
+  } catch (err) {
+    console.error("Tag bilgisi alınamadı:", err);
     res.status(500).json({ error: "Sunucu hatası" });
   }
 });
