@@ -3,7 +3,7 @@ const router = express.Router();
 const Post = require("../models/Post");
 const User = require("../models/User");
 const Category = require("../models/Category");
-const Tag = require("../models/Tags");
+const Tag = require("../models/Tag");
 
 // SLUG İLE POST GETİR (kategori + etiket populate)
 router.get("/slug/:slug", async (req, res) => {
@@ -213,10 +213,9 @@ router.post("/", async (req, res) => {
   try {
     const newPost = new Post(req.body);
     const savedPost = await newPost.save();
-    const populatedPost = await Post.findById(savedPost._id)
+    const populatedPost = await savedPost
       .populate("category", "name slug color icon")
-      .populate("tags", "name tagSlug")
-      .populate("user", "username name profileImage");
+      .populate("tags", "name tagSlug");
     res.status(201).json(populatedPost);
   } catch (err) {
     console.error("Yeni yazı ekleme hatası:", err);
@@ -231,8 +230,7 @@ router.put("/:id", async (req, res) => {
       new: true,
     })
       .populate("category", "name slug color icon")
-      .populate("tags", "name tagSlug")
-      .populate("user", "username name profileImage");
+      .populate("tags", "name tagSlug");
 
     if (!updatedPost) return res.status(404).json({ error: "Yazı bulunamadı" });
     res.json(updatedPost);
